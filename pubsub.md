@@ -25,8 +25,7 @@ Pubsub block offset. Default 0 is used if not specified.
 
 ## API
 ### /v1/pubsub/status 
-plugin:queue_size is the queue size of FIFO for outputing to kafka
-kafka:queue_size is the pending kafka message queue size
+
 ```
 {
     "kafka": {
@@ -51,6 +50,8 @@ kafka:queue_size is the pending kafka message queue size
     }
 }
 ```
+- plugin:queue_size is the queue size of FIFO for outputing to kafka
+- kafka:queue_size is the pending kafka message queue size
 
 ## Docker File
 Base docker file is located at Docker\builder-mt\Dockerfile.
