@@ -68,6 +68,10 @@ if(BUILD_MONGO_DB_PLUGIN)
   target_link_libraries( nodeos PRIVATE -Wl,${whole_archive_flag} mongo_db_plugin -Wl,${no_whole_archive_flag} )
 endif()
 
+#if(TARGET pubsub_plugin)
+  target_link_libraries( nodeos PRIVATE -Wl,${whole_archive_flag} pubsub_plugin -Wl,${no_whole_archive_flag} )
+#endif()
+
 install( TARGETS
    nodeos
 
