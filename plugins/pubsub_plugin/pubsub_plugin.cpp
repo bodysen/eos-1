@@ -16,8 +16,6 @@ const char* PUBSUB_TOPIC_OPTION = "pubsub-topic";
 const char* PUBSUB_PARTITION_OPTION = "pubsub-partition";
 const char* PUBSUB_BLOCK_MARGIN_OPTION = "pubsub-block-margin";
 const char* PUBSUB_BLOCK_OFFSET_OPTION = "pubsub-block-offset";
-const char* PUBSUB_CID_OPTION = "pubsub-cid";
-const char* PUBSUB_FORMAT_OPTION = "pubsub-format";
 }
 
 namespace fc { class variant; }
@@ -70,7 +68,7 @@ void pubsub_plugin::set_program_options(options_description& cli, options_descri
 
     cfg.add_options()
             (PUBSUB_URI_OPTION, bpo::value<std::string>(),
-             "Pubsub URI connection string"
+             "Pubsub zookeeper URI array"
              " Default url 'localhost' is used if not specified in URI.")
             (PUBSUB_TOPIC_OPTION, bpo::value<std::string>(),
              "Pubsub topic string"
@@ -84,12 +82,6 @@ void pubsub_plugin::set_program_options(options_description& cli, options_descri
             (PUBSUB_BLOCK_OFFSET_OPTION, bpo::value<int64_t>(),
              "Pubsub block offset"
              " Default 0 is used if not specified.")
-            (PUBSUB_CID_OPTION, bpo::value<std::string>(),
-             "Client ID string"
-             " Default 'EosNode' is used if not specified in URI.")
-            (PUBSUB_FORMAT_OPTION, bpo::value<std::string>(),
-             "format of message"
-             " Default to 'json' if not specified.")
             ;
 }
 
@@ -97,7 +89,7 @@ void pubsub_plugin::plugin_initialize(const variables_map& options)
 {
     ilog("initialize");
     
-    std::string uri_str, topic_str, cid_str, format_str;
+    std::string uri_str, topic_str;
     int topic_partition = 0;
     int block_margin = 2000;
     int64_t block_offset = 0;
@@ -142,30 +134,13 @@ void pubsub_plugin::plugin_initialize(const variables_map& options)
         }
     }
 
-    if (options.count(PUBSUB_CID_OPTION)) {
-        cid_str = options.at(PUBSUB_CID_OPTION).as<std::string>();
-        if (cid_str.empty()) {
-            wlog("cid not specified => use 'EosNode' instead.");
-            cid_str = "EosNode";
-        }
-    }
-
-    if (options.count(PUBSUB_FORMAT_OPTION)) {
-        format_str = options.at(PUBSUB_FORMAT_OPTION).as<std::string>();
-        if (format_str.empty()) {
-            wlog("format not specified => use 'json' instead.");
-            format_str = "json";
-        }
-    }
-
-    ilog("Publish to ${u} with topic=${t} partition=${p} block_margin=${m} block_offset=${b} cid=${c} format=${f}", 
-        ("u", uri_str)("t", topic_str)("p", topic_partition)("m", block_margin)("b", block_offset)("c", cid_str)
-        ("f", format_str));
+    ilog("Publish to ${u} with topic=${t} partition=${p} block_margin=${m} block_offset=${b}", 
+        ("u", uri_str)("t", topic_str)("p", topic_partition)("m", block_margin)("b", block_offset));
 
     m_block_margin = block_margin;
     m_block_offset = block_offset;
 
-    m_be = std::make_shared<backend>(uri_str, topic_str, topic_partition, cid_str, format_str);
+    m_be = std::make_shared<backend>(uri_str, topic_str, topic_partition);
 
     if (options.at("replay-blockchain").as<bool>() ||
          options.at("hard-replay-blockchain").as<bool>() ||
@@ -240,7 +215,7 @@ void pubsub_plugin::push_block(const chain::signed_block_ptr& block)
     const auto timestamp = std::chrono::milliseconds{
                             std::chrono::seconds{block->timestamp.operator fc::time_point().sec_since_epoch()}}.count();
     const auto transaction_merkle_root = block->transaction_mroot.str();
-    const auto transaction_count = block->transactions.size(); // FIXME: 
+    const auto transaction_count = block->transactions.size(); 
     const auto producer = block->producer.to_string();
 
     br->block_num = block_num;
@@ -275,7 +250,6 @@ void pubsub_plugin::push_block(const chain::signed_block_ptr& block)
             net_usage_words,
             std::move(transfer_actions)
         });
-        
     }
 
     const std::string &block_str = fc::json::to_pretty_string(*br);
@@ -322,7 +296,7 @@ void pubsub_plugin::on_transaction(const chain::transaction_trace_ptr& trace) {
     }
 
     for( const auto& at : trace->action_traces ) {
-        int32_t account_action_seq = 0; // TODO:
+        int32_t account_action_seq = 0; 
         if (at.act.name != N(onblock)) {
             result->actions.emplace_back( ordered_action_result{
                                  at.receipt.global_sequence,

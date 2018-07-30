@@ -27,8 +27,7 @@ using chainbase::database;
 class backend
 {
 public:
-    backend(const std::string& uri, const std::string& topic, const int partition, 
-        const std::string& cid, const std::string& format);
+    backend(const std::string& uri, const std::string& topic, const int partition);
     ~backend();
     void wipe();
 
@@ -38,7 +37,7 @@ public:
     rd_kafka_t *getHandle();
     pubsub_runtime::kafka_log_ptr m_log;
 private:
-    std::string m_uri, m_topic, m_cid, m_format;
+    std::string m_uri, m_topic;
     int m_partition;
     // context for rdkafka
     rd_kafka_t *m_rk;

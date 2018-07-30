@@ -147,7 +147,7 @@ static void msg_delivered(rd_kafka_t *rk,
     }
 }
 
-backend::backend(const std::string &uri, const std::string &topic, const int partition, const std::string &cid, const std::string &format) : m_uri(uri), m_topic(topic), m_cid(cid), m_format(format), m_partition(partition)
+backend::backend(const std::string &uri, const std::string &topic, const int partition) : m_uri(uri), m_topic(topic), m_partition(partition)
 {
     m_log = std::make_shared<pubsub_runtime::kafka_log>();
     FC_ASSERT(m_log);
